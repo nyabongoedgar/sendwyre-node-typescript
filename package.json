@@ -1,0 +1,21 @@
+{
+  "name": "sendwyre-node-typescript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/nyabongoedgar/sendwyre-node-typescript.git",
+  "author": "nyabongoedgar <nyabongoedgar@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "run-locally": "nodemon sim_lambda.ts --insecure-http-parser"
+  },
+  "dependencies": {
+    "@types/node": "^13.9.3",
+    "aws-lambda-helper": "git+https://github.com/ferrumnet/aws-lambda-helper.git",
+    "axios": "^0.19.2",
+    "dotenv": "^8.2.0",
+    "ferrum-plumbing": "git+https://github.com/ferrumnet/ferrum-plumbing.git",
+    "nodemon": "^2.0.2",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  }
+}

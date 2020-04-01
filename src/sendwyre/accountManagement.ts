@@ -160,7 +160,7 @@ export class AccountManagement implements Injectable {
         return response;
     }
 
-    async testCreatePaymentMethod(accountId: string, publicToken: string) {
+    async attachBlockChainAddressToPaymentMethod(blockChain: 'BTC' | 'ETH', publicToken: string) {
         // the public token is attached to a particular account that created an account
         /**Your server sends the publicToken and the user's Account ID to the Wyre API, which will connect the  Payment Method record on Wyre to the User's account (See LOCAL_TRANSFER (ACH) - Create Payment Method for this API call) **/
         // let body = { publicToken: publicToken, paymentMethodType: "DEBIT_CARD", country: "US"};\

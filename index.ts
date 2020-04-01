@@ -1,10 +1,6 @@
-import {LambdaGlobalContext} from "aws-lambda-helper";
-import {ServerModule} from "./src/server/ServerModule";
-require('dotenv').config();
+import app from './src/app'
+const port = 3000
 
-export async function handler(event: any, context: any) {
-        const container = await LambdaGlobalContext.container();
-        await container.registerModule(new ServerModule());
-        const lgc = container.get<any>(LambdaGlobalContext);
-        return await lgc.handleAsync(event, context);
-}
+app.get('/', (req: any, res: any) => res.send('Hello World!'))
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))

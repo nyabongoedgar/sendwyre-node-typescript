@@ -4,8 +4,8 @@ import AccountsController from './AccountsController';
 const Router = express.Router();
 
 Router.get(
-  '/accounts',
-  AccountsController.getAccount
+  '/users/:userId',
+  AccountsController.getUserInfo
 );
 
 Router.post(
@@ -18,24 +18,36 @@ Router.post(
   AccountsController.createPaymentMethod
 );
 
-// Router.get(
-//   '/paymentMethods',
-//   AccountsController.getPaymentMethod
-// );
 
-// Router.get(
-//   '/allPaymentMethods',
-//   AccountsController.getAllPaymentMethods
-// );
-
-// Router.put(
-//   '/accounts',
-//   AccountsController.updateAccount
-// );
 
 Router.post(
   '/attachBlockChain',
-  AccountsController.attachBlockChainToPaymentMethod
+  AccountsController.attachBlockChainToPaymentMethod,
+  AccountsController.UpdateUserDetails
 );
+
+Router.post(
+  '/transfers',
+  AccountsController.transfer
+);
+
+Router.get(
+  '/rates',
+  AccountsController.getRates
+);
+
+/** the following routes will be triggered when objects on the sendwyre db update () */
+Router.post(
+  '/updateAccount',
+  AccountsController.updateAccountInfo
+)
+
+Router.post(
+  '/updatePaymentMethod'
+)
+
+Router.post(
+  '/updateTransfer'
+)
 
 export default Router;

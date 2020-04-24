@@ -6,9 +6,10 @@
   "author": "nyabongoedgar <nyabongoedgar@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "run": "nodemon index.ts"
+    "start": "nodemon index.ts"
   },
   "dependencies": {
+    "@types/express": "^4.17.6",
     "@types/node": "^13.9.3",
     "aws-lambda-helper": "git+https://github.com/ferrumnet/aws-lambda-helper.git",
     "axios": "^0.19.2",

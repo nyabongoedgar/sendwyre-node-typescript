@@ -19,8 +19,8 @@ app.use(bodyParser.json());
 modules(app);
 
 // catch all routers
-app.use('*', (req: any, res: any) => res.status(404).json({
-  message: 'Not Found. Use /api/v1 to access the Api'
-}));
+// app.use('*', (req: any, res: any) => res.status(404).json({
+//   message: 'Not Found. Use /api/v1 to access the Api'
+// }));
 
 export default app;

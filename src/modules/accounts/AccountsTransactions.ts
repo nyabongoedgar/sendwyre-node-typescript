@@ -1,8 +1,9 @@
 import assert from "assert";
 import { connection } from "../../database/Database";
-import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, createTransfer, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges ,getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer } from "./WyreService";
-import { runInNewContext } from "vm";
+import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, createTransfer, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer } from "./WyreService";
+import Error from '../../helpers/Error';
 import { port } from '../../../index';
+import { response } from "express";
 
 
 
@@ -16,39 +17,31 @@ export default class AccountsTransactions {
 
     static UserMongoSchema = { id: '', profile: {}, wyreAccount: {}, paymentMethods: [], transactions: [] }
 
-    static async postAccountTransaction(req: any, res: any) {
+    static async postAccountTransaction(req: any, res: any, next: any) {
         try {
-            const response = await createAccount();
-            let subscription = { "subscribeTo": `account:${response.id}`, "notifyTarget": `${req.hostname}:${port}/updateAccount` };
+            const response = await createAccount(req.body.accountDetails);
+            let subscription = { subscribeTo: `account:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateAccount` };
+            console.log(subscription, '>>>>>>>>>>>>>>>>>subscription')
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
-
-            db.collection(this.collectionName).updateOne({ "_id": 40 }, { "$set": { "wyreAccount": response, "profile": {}, "paymentMethods": [], "transactions": [] }, "$inc": { "version": 1 } }, { "upsert": true }, async function (err: any, result: any) {
-                if (err) {
-                    console.log(err)
-                    res.status(500).json({
-                        error: err
-                    });
-                }
+            db.collection(this.collectionName).updateOne({ userId: req.body.userId }, { "$set": { "wyreAccount": response, "profile": {}, "paymentMethods": [], "transactions": [] }, "$inc": { "version": 1 } }, { "upsert": true }, async function (err: any, result: any) {
+                if (err) console.log('Mongo Err', err)
                 if (result) {
                     console.log(result);
                     await SubscribeToAccountChanges(response.id, subscription);
                     res.status(201).json({
                         response,
-                        count: result.upsertedCount,
-                        message: 'Successfully modified document',
+                        message: 'Account created successfully',
                         success: true
                     })
                 }
             });
         }
-        catch (err) {
-            res.status(500).json({
-                error: err,
-                message: 'process failed'
-            });
+        catch (error) {
+            next(error);
         }
     }
+
     /* Update statements start from here */
     static async UpdateAccountTransaction(req: any, res: any, next: any) {
         try {
@@ -64,28 +57,19 @@ export default class AccountsTransactions {
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({ "wyreAccount.id": accountId }, { "$set": { "wyreAccount": response }, "$inc": { "version": 1 } }, { "upsert": false }, async function (err: any, result: any) {
-                if (err) {
-                    console.log(err)
-                    res.status(500).json()({
-                        error: err
-                    });
-                }
+                if (err) console.log('Mongo Err', err);
                 if (result) {
                     console.log(result);
                     res.status(201).json({
                         updatedAccount: response,
-                        count: result.upsertedCount,
-                        message: 'Successfully modified account',
+                        message: 'Account updated successfully',
                         success: true
                     });
                 }
             });
         }
-        catch (err) {
-            res.status(400).json({
-                error: err,
-                message: 'process failed'
-            });
+        catch (error) {
+            next(error);
         }
     }
 
@@ -105,17 +89,16 @@ export default class AccountsTransactions {
             db.collection(this.collectionName).update({
                 "paymentMethods.id": paymentMethodId
             }, { "$set": { "paymentMethods.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
-                if (err) console.log(err);
+                if (err) console.log('Mongo Err', err);
                 console.log(result);
             });
 
-        } catch (err) {
-            // next(err)
-            res.send(err)
+        } catch (error) {
+            next(error);
         }
     }
 
-    static async updateTransfer(req: any, res: any) {
+    static async updateTransfer(req: any, res: any, next: any) {
         try {
             //this transferid comes from a webhook, so I get the transfer as in the following line
             //transfer:T_QRSSNSIUXUSD .. // This why we use slice, but regular expressions should be used.
@@ -136,29 +119,26 @@ export default class AccountsTransactions {
             db.collection(this.collectionName).update({
                 "transactions.id": transferId
             }, { "$set": { "transactions.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
-                if (err) console.log(err);
+                if (err) console.log('Mongo Err', err);
                 console.log(result);
             });
         } catch (error) {
-            throw error;
+            next(error);
         }
     }
 
 
     // updates stop here
 
-    static async getUserInfoFromDb(req: any, res: any) {
+    static async getUserInfoFromDb(req: any, res: any, next: any) {
         const userId = req.params.userId;
-        console.log(Number(req.params), 'req.params');
         try {
             let dbConn2 = await this.dbConn;
             const db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).findOne({
-                _id: Number(userId)
+                userId: userId
             }, function (err: any, result: any) {
-                if (err) {
-                    res.send({ error: 'An error has occurred', success: false });
-                }
+                if (err) console.log('Mongo Err', err)
 
                 if (result === null) {
                     res.status(200).json({
@@ -169,45 +149,39 @@ export default class AccountsTransactions {
                     res.status(200).send({
                         message: 'Account retrieved successfully',
                         success: true,
-                        response: result
+                        user: result
                     });
                 }
 
             });
-        } catch (err) {
-            res.send({ error: 'Connection failed' })
+        } catch (error) {
+            next(error);
         }
     }
 
-    static async createPaymentMethod(req: any, res: any) {
+    static async createPaymentMethod(req: any, res: any, next: any) {
         try {
             const response = await createPaymentMethod(req.body.accountId, req.body.publicToken);
-            
-            let subscription = {"subscribeTo":`${response.srn}`,"notifyTarget": `${req.hostname}:${port}/updatePaymentMethod`};
+            let subscription = { subscribeTo: `${response.srn}`, notifyTarget: `${req.hostname}:${port}/api/v1/updatePaymentMethod` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                _id: 40
+                "wyreAccount.id": req.body.accountId
             },
                 { "$push": { paymentMethods: response }, "$inc": { "version": 1 } }, { "upsert": false }
                 , async function (err: any, result: any) {
-                    if (err) {
-                        res.status(400).send({
-                            message: 'failed to create payment method'
-                        })
-                    }
+                    if (err) console.log('Mongo Err');
                     if (result) {
-                        await SubscribeToPaymentMethodChanges(req.body.accountId, response.id, subscription);
+                        await SubscribeToPaymentMethodChanges(req.body.accountId, subscription);
                         res.status(200).send({
                             message: 'payment method created',
-                            paymentMethod: response
+                            paymentMethod: response,
+                            success: true
                         });
                     }
                 });
         } catch (err) {
-            res.send({
-                error: 'Connection failed'
-            })
+            next(err);
         }
     }
 
@@ -219,63 +193,60 @@ export default class AccountsTransactions {
                 success: true,
                 response: response
             });
-            next()
-        } catch (err) {
-            res.json({
-                message: err
-            });
+            next();
+        } catch (error) {
+            next(error);
         }
 
 
     }
 
 
-    static async UpdateUserDetails(req: any, res: any) {
+    static async UpdateUserDetails(req: any, res: any, next: any) {
         try {
             const accountResponse = await getAccountFromWyre(req.body.accountId);
             const paymentMethod = await getPaymentMethod(req.body.paymentMethodId, req.body.accountId);
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                _id: 35
+                "wyreAccount.id": req.body.accountId
             },
-                { "$push": { "paymentMethods": paymentMethod }, "$set": { "wyreAccount": accountResponse }, "$inc": { "version": 1 } }, { "upsert": false }
+                { "$set": { "paymentMethods": [paymentMethod], "wyreAccount": accountResponse }, "$inc": { "version": 1 } }, { "upsert": false }
                 , function (err: any, result: any) {
                     if (err) console.log(err);
                     console.log(result);
                 });
-        } catch (err) {
-            throw new err;
+        } catch (error) {
+            next(error);
         }
     }
 
     static async transfer(req: any, res: any, next: any) {
         try {
             const response = await createTransfer(req.body.accountId, req.body.body);
-            let subscription = {"subscribeTo":`transfer:${response.id}`,"notifyTarget": `${req.hostname}:${port}/updateTransfer`};
+            let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                _id: 40
+                "wyreAccount.id": req.body.accountId
             },
                 { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": true }
                 , async function (err: any, result: any) {
                     if (err) {
-                        res.status(400).send({
-                            message: 'transaction not saved in the database',
-                            error: err
-                        });
+                        next(err);
                     }
                     if (result) {
                         console.log(result, 'transfers saved');
                         await SubscribeToTransferChanges(req.body.accountId, subscription)
                         res.status(200).send({
-                            message: 'transaction complete',
-                            transfer: response
+                            message: 'Transaction completed',
+                            transfer: response,
+                            success: true
                         });
                     }
                 });
         } catch (error) {
+            console.log('I am here', error)
             next(error);
         }
     }

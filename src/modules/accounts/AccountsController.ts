@@ -1,25 +1,25 @@
 import AccountsTransactions from './AccountsTransactions';
-import { getRates } from './WyreService';
+import { getRates, getLimits, getQuotes } from './WyreService';
 class AccountsController {
 
-    static async postAccount(req: any, res: any) {
-        await AccountsTransactions.postAccountTransaction(req, res)
+    static async postAccount(req: any, res: any, next: any) {
+        await AccountsTransactions.postAccountTransaction(req, res, next)
     }
 
-    static async getUserInfo(req: any, res: any) {
-        await AccountsTransactions.getUserInfoFromDb(req, res)
+    static async getUserInfo(req: any, res: any, next: any) {
+        await AccountsTransactions.getUserInfoFromDb(req, res, next)
         // 0.48460408945276057
     }
 
-    static async createPaymentMethod(req: any, res: any) {
-        await AccountsTransactions.createPaymentMethod(req, res);
+    static async createPaymentMethod(req: any, res: any, next: any) {
+        await AccountsTransactions.createPaymentMethod(req, res, next);
     }
 
     static async attachBlockChainToPaymentMethod(req: any, res: any, next: any) {
         await AccountsTransactions.attachBlockChainToPaymentMethod(req, res, next);
     }
-    static async UpdateUserDetails(req: any, res: any) {
-        await AccountsTransactions.UpdateUserDetails(req, res);
+    static async UpdateUserDetails(req: any, res: any, next: any) {
+        await AccountsTransactions.UpdateUserDetails(req, res, next);
     }
 
     static async transfer(req: any, res: any, next: any) {
@@ -37,31 +37,34 @@ class AccountsController {
         }
     }
 
-    static async updateAccountInfo(req: any, res: any, next: any) {
+    static async getLimits(req: any, res: any, next: any) {
         try {
-            await AccountsTransactions.UpdateAccountTransaction(req, res, next);
-        }
-        catch (error) {
-            next(error);
-        }
+            const response = await getLimits();
+            res.status(200).json({
+                limits: response
+            });
+        } catch (error) { next(error); }
+    }
+
+    static async getQuote(req: any, res: any, next: any) {
+        try {
+            const response = await getQuotes(req.body);
+            res.status(200).json({
+                quotes: response
+            });
+        } catch (error) { next(error); }
+    }
+
+    static async updateAccountInfo(req: any, res: any, next: any) {
+        await AccountsTransactions.UpdateAccountTransaction(req, res, next);
     }
 
     static async updatePaymentMethod(req: any, res: any, next: any) {
-        try {
-            await AccountsTransactions.UpdatePaymentMethod(req, res, next);
-        }
-        catch (error) {
-            next(error);
-        }
+        await AccountsTransactions.UpdatePaymentMethod(req, res, next);
     }
 
     static async updateTransfer(req: any, res: any, next: any) {
-        try {
-            await AccountsTransactions.UpdatePaymentMethod(req, res, next);
-        }
-        catch (error) {
-            next(error);
-        }
+        await AccountsTransactions.updateTransfer(req, res, next);
     }
 
 }

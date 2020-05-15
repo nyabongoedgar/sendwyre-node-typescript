@@ -1,7 +1,5 @@
 import * as crypto from "crypto";
 import axios from "axios";
-import {port} from '../../../index';
-
 interface requestConfig {
     headers: {
         "Content-Type": string;
@@ -51,97 +49,35 @@ export async function getAccountFromWyre(accountId: string): Promise<any> {
     } catch (error) {
         console.log(error);
     }
-
 }
 
-export async function createAccount(): Promise<any> {
+export async function createAccount(accountDetails: any): Promise<any> {
     try {
         const url = `${_rootUrl}/${_accountsPrefix}?timestamp=${_timestamp}`;
         /**
-       * https://docs.sendwyre.com/v3/docs/account-resource#section-fields 
-       * This page has alll required fields for creating accounts for others.
+       * https://docs.sendwyre.com/v3/docs/account-resource#section-fields
+       * This page has all required fields for creating accounts for others.
        **/
-        let accountDetails = {
-            "type": "INDIVIDUAL",
-            "country": "US",
-            "subaccount": true,
-            "referrerAccountId": "AC_JZRHZANBEFP",
-            "profileFields": [
-                {
-                    fieldId: "individualLegalName",
-                    value: "Johnny Quest"
-                },
-                {
-                    fieldId: "individualCellphoneNumber",
-                    value: '+256930939349-343'
-                },
-                {
-                    fieldId: "individualEmail",
-                    value: 'johnnyquest@gmail.com'
-                },
-                {
-                    fieldId: "individualResidenceAddress",
-                    value: {
-                        street1: "1 Market St",
-                        street2: "Suite 402",
-                        city: "San Francisco",
-                        state: "CA",
-                        postalCode: "94105",
-                        country: "US"
-                    }
-                },
-                {
-                    fieldId: "individualDateOfBirth",
-                    value: '1995-05-25' //1995-05-25
-                },
-                // {
-                //     fieldId: "individualSsn",
-                //     value: ''
-                // },
-                {
-                    fieldId: "individualSourceOfFunds",
-                    // a payment method that the account holder owns.
-                    value: ''
-                },
-                /** a utility bill or bank statement. individualProofOfAddress will start in the PENDING state as we will attempt to use the individualSourceOfFunds to fill this requirement. **/
-                // ,{
-                //     fieldId: "individualProofOfAddress",
-                //     value: '',
-                // }
-            ]
-        }
         const response = await axios.post(url, accountDetails, configurePostOptions(url, accountDetails))
         return response.data;
     } catch (error) {
-        // console.log(error, '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        // return JSON.stringify(error) 
-        throw error;
-    }
-}
-
-export async function uploadDocument(accountId: string, formData: any): Promise<any> {
-    try {
-        let fieldId = 'individualGovernmentId';
-        let url = `${_rootUrl}/${_accountsPrefix}/${accountId}/${fieldId}?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
-        // const formData = new FormData();
-        // formData.append('image', files[0]) //we shall get files from an api request.
-        const response = await axios.post(url, formData, configurePostOptions(url, formData))
-        return response.data;
-    } catch (error) {
-        console.log(error);
+        let errorObject = error.response.data;
+        throw errorObject;
+        // const err = {err: response.data}
+        // throw new Error(error);
+        // return error;
     }
 }
 
 export async function createPaymentMethod(accountId: string, publicToken: string) {
-    // the public token is attached to a particular account that created an account
-    /**Your server sends the publicToken and the user's Account ID to the Wyre API, which will connect the  Payment Method record on Wyre to the User's account (See LOCAL_TRANSFER (ACH) - Create Payment Method for this API call) **/
     try {
         let body = { publicToken: publicToken, paymentMethodType: "LOCAL_TRANSFER", country: "US" };
         let url = `${_rootUrl}/v2/paymentMethods?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.post(url, body, configurePostOptions(url, body))
         return response.data;
     } catch (error) {
-        throw error;
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 
@@ -150,92 +86,129 @@ export async function getPaymentMethod(paymentMethodId: string, accountId: strin
         let url = `${_rootUrl}/v2/paymentMethod/${paymentMethodId}?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.get(url, configureGetOptions(url));
         return response.data;
-    } catch (error) { throw error; }
-}
-
-export async function getAllPaymentMethods(accountId: string) {
-    try {
-        let url = `${_rootUrl}/v2/paymentMethods?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
-        const response = await axios.get(url, configureGetOptions(url))
-        return response.data;
     } catch (error) {
-        console.log(error);
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 
-// export async function paymentMethodFollowUp(accountId: string, paymentMethodId: string) {
+// export async function getAllPaymentMethods(accountId: string) {
 //     try {
-//         let url = `${_rootUrl}/v2/paymentMethod/${paymentMethodId}/followup?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
-//         let body = { waitingPrompts: [{ id: "839LFN86GTA", answer: 'Plaid Checking 0000' }] };
-//         const response = await axios.post(url, configurePostOptions(url, body))
+//         let url = `${_rootUrl}/v2/paymentMethods?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+//         const response = await axios.get(url, configureGetOptions(url))
 //         return response.data;
-//     }
-//     catch (error) {
+//     } catch (error) {
 //         console.log(error);
 //     }
 // }
 
 export async function attachBlockChainToPaymentMethod(paymentMethodId: string, accountId: string) {
     try {
-        let url = `https://api.testwyre.com/v2/paymentMethod/${paymentMethodId}/attach?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+        let url = `${_rootUrl}/v2/paymentMethod/${paymentMethodId}/attach?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         let body = { blockchain: 'ALL' };
         const response = await axios.post(url, body, configurePostOptions(url, body));
         return response.data
     } catch (error) {
-        console.log(error)
-        throw error;
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 
 export async function createTransfer(accountId: string, body: any) {
-    // the public token is attached to a particular account that created an account
-    /**Your server sends the publicToken and the user's Account ID to the Wyre API, which will connect the  Payment Method record on Wyre to the User's account (See LOCAL_TRANSFER (ACH) - Create Payment Method for this API call) **/
     try {
-        // let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
-        let url = `${_rootUrl}/v3/transfers?timestamp=${_timestamp}`;
+        let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.post(url, body, configurePostOptions(url, body));
-        console.log(response.data, "dtaaa")
+        console.log(url, "url create transfer")
         return response.data;
     } catch (error) {
-        throw error;
+        let errorObject = error.response.data;
+        console.log(errorObject);
+        throw errorObject;
     }
 }
+
+
+// AC_JZRHZANBEFP
 
 export async function getRates() {
     try {
         let url = `${_rootUrl}/v3/rates?pretty&as=priced`;
         const response = await axios.get(url);
         return response.data;
-    } catch (error) { throw error }
+    } catch (error) {
+        let errorObject = error.response.data;
+        throw errorObject;
+    }
 }
 
-// making subscriptions for account, paymentMethods
+export async function getLimits() {
+    try {
+        let url = `${_rootUrl}/v3/limits?timestamp=${_timestamp}`;
+        const response = await axios.get(url, configureGetOptions(url));
+        return response.data;
+    } catch (error) {
+        let errorObject = error.response.data;
+        throw errorObject;
+    }
+}
+
+export async function getQuotes(body: any) {
+    try {
+        let url = `${_rootUrl}/v3/orders/quote/partner?timestamp=${_timestamp}`;
+        const response = await axios.post(url, configurePostOptions(url, body));
+        return response.data;
+    } catch (error) {
+        let errorObject = error.response.data;
+        throw errorObject;
+    }
+}
+
+/**
+ * making subscriptions for account */
 export async function SubscribeToAccountChanges(accountId: string, body: any) {
     try {
         let url = `${_rootUrl}/v3/subscriptions?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         //the notifyTarget will be the url to execute an account Update
-        const response = await axios.post(url, configurePostOptions(url, body));
+        const response = await axios.post(url, body, configurePostOptions(url, body));
+        console.log(response.data, 'account subscription');
         return response.data;
-    } catch (error) { throw error }
+    } catch (error) {
+        console.log('Error in the account subscription object', error)
+        let errorObject = error.response.data;
+        throw errorObject;;
+    }
 }
-
-export async function SubscribeToPaymentMethodChanges(accountId: string, paymentMethodId: string, body: any) {
+/**
+ * making subscriptions for paymentMethods */
+export async function SubscribeToPaymentMethodChanges(accountId: string, body: any) {
     try {
         let url = `${_rootUrl}/v3/subscriptions?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         //the notifyTarget will be the url to execute
-        const response = await axios.post(url, configurePostOptions(url, body));
+        const response = await axios.post(url, body, configurePostOptions(url, body));
+        console.log(response.data, 'payment method subscription');
         return response.data;
-    } catch (error) { throw error }
+    } catch (error) {
+        console.log('Error in the account subscription object', error);
+        let errorObject = error.response.data;
+        throw errorObject;
+    }
 }
 
+/**
+ * making subscriptions for transfers */
 export async function SubscribeToTransferChanges(accountId: string, body: any) {
     try {
         let url = `${_rootUrl}/v3/subscriptions?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
-        
         //the notifyTarget will be the url to execute
-        const response = await axios.post(url, configurePostOptions(url, body));
+        const response = await axios.post(url, body, configurePostOptions(url, body));
+        console.log(url, 'url subscription');
         return response.data;
-    } catch (error) { throw error }
+    } catch (error) {
+        console.log('Error in the Transfer subscription object', error);
+        let errorObject = error.response.data;
+        console.log(errorObject)
+        throw errorObject;
+    }
 }
 
 export async function getAccountForUpdate(accountId: string) {
@@ -244,17 +217,19 @@ export async function getAccountForUpdate(accountId: string) {
         const response = await axios.get(url, configureGetOptions(url));
         return response.data;
     } catch (error) {
-        throw error;
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 
 export async function getAndupdateTransfer(accountId: string, transferId: string) {
     try {
-        let url =`${_rootUrl}/v3/transfers/${transferId}?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+        let url = `${_rootUrl}/v3/transfers/${transferId}?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.get(url, configureGetOptions(url));
         return response.data;
     } catch (error) {
-        console.log(error)
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 
@@ -265,7 +240,8 @@ export async function getAndupdatePaymentMethod(accountId: string, paymentMethod
         console.log(response.data)
         return response.data;
     } catch (error) {
-        console.log(error)
+        let errorObject = error.response.data;
+        throw errorObject;
     }
 }
 

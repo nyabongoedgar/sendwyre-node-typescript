@@ -36,6 +36,14 @@ Router.get(
   AccountsController.getRates
 );
 
+Router.get(
+  '/quotes',
+  AccountsController.getQuote
+);
+
+Router.get('/limits',
+  AccountsController.getLimits)
+
 /** the following routes will be triggered when objects on the sendwyre db update () */
 Router.post(
   '/updateAccount',
@@ -43,11 +51,13 @@ Router.post(
 )
 
 Router.post(
-  '/updatePaymentMethod'
+  '/updatePaymentMethod',
+  AccountsController.updatePaymentMethod
 )
 
 Router.post(
-  '/updateTransfer'
+  '/updateTransfer',
+  AccountsController.updateTransfer
 )
 
 export default Router;

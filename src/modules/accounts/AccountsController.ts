@@ -1,5 +1,5 @@
 import AccountsTransactions from './AccountsTransactions';
-import { getRates, getLimits, getQuotes } from './WyreService';
+import { getRates, getLimits } from './WyreService';
 class AccountsController {
 
     static async postAccount(req: any, res: any, next: any) {
@@ -22,7 +22,22 @@ class AccountsController {
         await AccountsTransactions.UpdateUserDetails(req, res, next);
     }
 
-    static async transfer(req: any, res: any, next: any) {
+    // static async quoteTransfer(req: any, res: any, next: any) {
+    //     try {
+    //         const response = await quoteTransfer(req.body.accountId, req.body.transaction);
+    //         res.status(200).json({
+    //             quotedTransfer: response
+    //         })
+    //     } catch (error) {
+    //         next(error)
+    //     }
+    // }
+
+    // static async confirmTransfer(req: any, res: any, next: any){
+    //     await AccountsTransactions.confirmTransfer(req, res, next);
+    // }
+
+    static async createTransfer(req: any, res: any, next: any) {
         await AccountsTransactions.transfer(req, res, next);
     }
 
@@ -43,17 +58,12 @@ class AccountsController {
             res.status(200).json({
                 limits: response
             });
-        } catch (error) { next(error); }
+        } catch (error) {
+            next(error);
+        }
     }
 
-    static async getQuote(req: any, res: any, next: any) {
-        try {
-            const response = await getQuotes(req.body);
-            res.status(200).json({
-                quotes: response
-            });
-        } catch (error) { next(error); }
-    }
+
 
     static async updateAccountInfo(req: any, res: any, next: any) {
         await AccountsTransactions.UpdateAccountTransaction(req, res, next);

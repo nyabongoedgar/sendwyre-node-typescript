@@ -1,6 +1,6 @@
 import assert from "assert";
 import { connection } from "../../database/Database";
-import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, createTransfer, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer } from "./WyreService";
+import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer, createTransfer } from "./WyreService";
 import Error from '../../helpers/Error';
 import { port } from '../../../index';
 import { response } from "express";
@@ -221,9 +221,41 @@ export default class AccountsTransactions {
         }
     }
 
+    // static async confirmTransfer(req: any, res: any, next: any) {
+    //     try {
+    //         const response = await confirmTransfer(req.body.accountId, req.body.transferId);
+    //         console.log('Creating a fence for response',response, 'this is another response in the confirm transfer account transactions')
+    //         let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
+    //         let dbConn2 = await this.dbConn;
+    //         let db = dbConn2.db(this.dbName);
+    //         db.collection(this.collectionName).updateOne({
+    //             "wyreAccount.id": req.body.accountId
+    //         },
+    //             { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": true }
+    //             , async function (err: any, result: any) {
+    //                 if (err) {
+    //                     next(err);
+    //                 }
+    //                 if (result) {
+    //                     console.log(result, 'transfers saved');
+    //                     // await SubscribeToTransferChanges(req.body.accountId, subscription)
+    //                     res.status(200).send({
+    //                         message: 'Transaction completed',
+    //                         transfer: response,
+    //                         success: true
+    //                     });
+    //                 }
+    //             });
+    //     } catch (error) {
+    //         next(error);
+    //     }
+
+    // }
+
     static async transfer(req: any, res: any, next: any) {
         try {
-            const response = await createTransfer(req.body.accountId, req.body.body);
+            const response = await createTransfer(req.body.accountId, req.body.transaction);
+            console.log('??????????????????????????????????????????????????',response, 'this is another response in the confirm transfer account transactions')
             let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
@@ -237,7 +269,7 @@ export default class AccountsTransactions {
                     }
                     if (result) {
                         console.log(result, 'transfers saved');
-                        await SubscribeToTransferChanges(req.body.accountId, subscription)
+                        // await SubscribeToTransferChanges(req.body.accountId, subscription)
                         res.status(200).send({
                             message: 'Transaction completed',
                             transfer: response,
@@ -246,9 +278,9 @@ export default class AccountsTransactions {
                     }
                 });
         } catch (error) {
-            console.log('I am here', error)
             next(error);
         }
+
     }
 
 }

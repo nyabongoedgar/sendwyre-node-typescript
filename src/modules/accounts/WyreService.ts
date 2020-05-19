@@ -116,9 +116,11 @@ export async function attachBlockChainToPaymentMethod(paymentMethodId: string, a
 
 export async function createTransfer(accountId: string, body: any) {
     try {
-        let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+        console.log('in the transfer')
+        let url = `${_rootUrl}/v3/transfers?timestamp=${_timestamp}`;
+        // let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.post(url, body, configurePostOptions(url, body));
-        console.log(url, "url create transfer")
+        console.log(response.data, 'tran data')
         return response.data;
     } catch (error) {
         let errorObject = error.response.data;
@@ -129,6 +131,41 @@ export async function createTransfer(accountId: string, body: any) {
 
 
 // AC_JZRHZANBEFP
+
+// export async function quoteTransfer(accountId: string, body: any) {
+//     try {
+//         // let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+//         let url = `${_rootUrl}/v3/transfers?timestamp=${_timestamp}`;
+//         console.log(url, 'url in transfer');
+//         const response = await axios.post(url, body, configurePostOptions(url, body));
+//         console.log(url, "url create transfer", response)
+//         return response.data;
+//     } catch (error) {
+//         let errorObject = error.response.data;
+//         console.log(errorObject);
+//         throw errorObject;
+//     }
+// }
+
+// /**
+//  * The result of this confirmation is what we post in the database
+//  * @param accountId
+//  * @param transferId
+//  */
+// export async function confirmTransfer(accountId: string, transferId: string) {
+//     try {
+//         // let url = `${_rootUrl}/v3/transfers/${transferId}/confirm?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+//         let url = `${_rootUrl}/v3/transfers/${transferId}/confirm?timestamp=${_timestamp}`;
+//         const response = await axios.post(url, {}, configurePostOptions(url, {}));
+//         console.log(response.data, 'this transaction has thus been approved !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+//         return response.data
+//     } catch (error) {
+//         let errorObject = error.response.data;
+//         console.log(errorObject, 'this transaction has not been approved in the confirmation');
+//         throw errorObject;
+//     }
+
+// }
 
 export async function getRates() {
     try {
@@ -145,17 +182,6 @@ export async function getLimits() {
     try {
         let url = `${_rootUrl}/v3/limits?timestamp=${_timestamp}`;
         const response = await axios.get(url, configureGetOptions(url));
-        return response.data;
-    } catch (error) {
-        let errorObject = error.response.data;
-        throw errorObject;
-    }
-}
-
-export async function getQuotes(body: any) {
-    try {
-        let url = `${_rootUrl}/v3/orders/quote/partner?timestamp=${_timestamp}`;
-        const response = await axios.post(url, configurePostOptions(url, body));
         return response.data;
     } catch (error) {
         let errorObject = error.response.data;

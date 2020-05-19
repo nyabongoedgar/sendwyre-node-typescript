@@ -26,19 +26,24 @@ Router.post(
   AccountsController.UpdateUserDetails
 );
 
+// Router.post(
+//   '/quoteTransfer',
+//   AccountsController.quoteTransfer
+// );
+
+// Router.post(
+//   '/confirmTransfer',
+//   AccountsController.confirmTransfer
+// )
+
 Router.post(
   '/transfers',
-  AccountsController.transfer
+  AccountsController.createTransfer
 );
 
 Router.get(
   '/rates',
   AccountsController.getRates
-);
-
-Router.get(
-  '/quotes',
-  AccountsController.getQuote
 );
 
 Router.get('/limits',

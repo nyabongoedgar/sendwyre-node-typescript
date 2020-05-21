@@ -169,7 +169,7 @@ export async function createTransfer(accountId: string, body: any) {
 
 export async function getRates() {
     try {
-        let url = `${_rootUrl}/v3/rates?pretty&as=priced`;
+        let url = `${_rootUrl}/v3/rates?as=MULTIPLIER`;
         const response = await axios.get(url);
         return response.data;
     } catch (error) {

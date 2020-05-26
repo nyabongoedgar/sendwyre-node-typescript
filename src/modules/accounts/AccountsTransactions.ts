@@ -256,9 +256,9 @@ export default class AccountsTransactions {
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                "wyreAccount.id": req.body.accountId
+                "wyreAccount.id": "AC_CFMZQYCJBD4" /** req.body.accountId */
             },
-                { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": true }
+                { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": false }
                 , async function (err: any, result: any) {
                     if (err) {
                         next(err);

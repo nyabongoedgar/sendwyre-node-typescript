@@ -120,7 +120,7 @@ export async function createTransfer(accountId: string, body: any) {
         let url = `${_rootUrl}/v3/transfers?timestamp=${_timestamp}`;
         // let url = `${_rootUrl}/v3/transfers?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
         const response = await axios.post(url, body, configurePostOptions(url, body));
-        console.log(response.data, 'tran data')
+        console.log(response.data, 'transfer data');
         return response.data;
     } catch (error) {
         let errorObject = error.response.data;

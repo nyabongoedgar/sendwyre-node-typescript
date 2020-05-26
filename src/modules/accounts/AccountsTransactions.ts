@@ -1,11 +1,7 @@
 import assert from "assert";
 import { connection } from "../../database/Database";
-import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer, createTransfer } from "./WyreService";
-import Error from '../../helpers/Error';
+import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer, createTransfer, getDebitCardTransfer } from "./WyreService";
 import { port } from '../../../index';
-import { response } from "express";
-
-
 
 export default class AccountsTransactions {
     /*
@@ -255,7 +251,7 @@ export default class AccountsTransactions {
     static async transfer(req: any, res: any, next: any) {
         try {
             const response = await createTransfer(req.body.accountId, req.body.transaction);
-            console.log('??????????????????????????????????????????????????',response, 'this is another response in the confirm transfer account transactions')
+            console.log('??????????????????????????????????????????????????', response, 'this is another response in the confirm transfer account transactions')
             let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
@@ -281,6 +277,37 @@ export default class AccountsTransactions {
             next(error);
         }
 
+    }
+
+    static async getDebitCardTransfer(req: any, res: any, next: any) {
+        try {
+            //this transferid comes from a webhook, so I get the transfer as in the following line
+            //transfer:T_QRSSNSIUXUSD .. // This why we use slice, but regular expressions should be used.
+            // console.log(req.params, '>>>>>', req.query)
+            const {accountId, transferId} = req.query;
+            const response = await getDebitCardTransfer(accountId.split(":")[1], transferId);
+            // console.log(response.data, 'response s.dbConn;
+            // let db = dbConn2.db(this.dbName);
+            // db.collection(this.collectionName).update({
+            //     "wyreAccount.id": "AC_JZRHZANBEFP" /*req.body.accountId */
+            // }, { "$push": { "transactio.data from get debit trans')
+            // /**
+            //  *  Method 2 */
+            // let dbConn2 = await thins": response }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
+            //     if (err) console.log('Mongo Err', err);
+            //     console.log(result);
+            //     res.status(200).json({
+            //         message: 'successfully saved debot card info',
+            //         success: true
+            //     })
+            // });
+            res.send({
+                pickedTransfer : response
+            })
+        } catch (error) {
+            console.log(error, 'in the debit card transactions')
+            next(error);
+        }
     }
 
 }

@@ -41,6 +41,11 @@ class AccountsController {
         await AccountsTransactions.transfer(req, res, next);
     }
 
+    static async getDebitCardTransfer(req: any, res: any, next: any) {
+        await AccountsTransactions.getDebitCardTransfer(req, res, next);
+    }
+
+
     static async getRates(req: any, res: any, next: any) {
         try {
             const response = await getRates();

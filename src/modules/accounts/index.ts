@@ -42,6 +42,11 @@ Router.post(
 );
 
 Router.get(
+  '/debitcard',
+  AccountsController.getDebitCardTransfer
+);
+
+Router.get(
   '/rates',
   AccountsController.getRates
 );
@@ -58,11 +63,13 @@ Router.post(
 Router.post(
   '/updatePaymentMethod',
   AccountsController.updatePaymentMethod
-)
+);
 
 Router.post(
   '/updateTransfer',
   AccountsController.updateTransfer
-)
+);
+
+
 
 export default Router;

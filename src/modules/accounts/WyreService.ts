@@ -129,6 +129,22 @@ export async function createTransfer(accountId: string, body: any) {
     }
 }
 
+export async function getDebitCardTransfer(accountId: string, transferId: string) {
+    try {
+        // let url = `${_rootUrl}/v3/transfers/${transferId}?timestamp=${_timestamp}`;
+        // let url = `${_rootUrl}/v3/transfers/${transferId}?masqueradeAs=${accountId}&timestamp=${_timestamp}`;
+        let url = `${_rootUrl}/v2/transfer/${transferId}/track?timestamp=${_timestamp}`;
+        const response = await axios.get(url, configureGetOptions(url));
+        console.log(response.data, 'debit card transfer gotten')
+        return response.data;
+    } catch (error) {
+        // console.log(error.response.data)
+        let errorObject = error.response.data;
+        console.log(error, 'error from getting transfer from debit card');
+        throw error;
+    }
+}
+
 
 // AC_JZRHZANBEFP
 

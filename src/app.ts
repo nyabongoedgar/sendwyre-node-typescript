@@ -13,14 +13,7 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-// app.use(morgan('dev'));
-
-
-
-
-
-
-// app.use(expressValidator());
+app.use(morgan('dev'));
 
 // set base url for api
 modules(app);

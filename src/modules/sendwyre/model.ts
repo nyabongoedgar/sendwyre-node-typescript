@@ -16,7 +16,7 @@ export default class Model {
         try {
             const response = await createAccount(req.body.accountDetails);
             console.log(response, 'user account created on wyre service');
-            let subscription = { subscribeTo: `account:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateAccount` };
+            let subscription = { subscribeTo: `account:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateAccounts` };
             console.log(subscription, 'subscription');
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
@@ -70,7 +70,7 @@ export default class Model {
     static async createPaymentMethod(req: any, res: any, next: any) {
         try {
             const response = await createPaymentMethod(req.body.accountId, req.body.publicToken);
-            let subscription = { subscribeTo: `${response.srn}`, notifyTarget: `${req.hostname}:${port}/api/v1/updatePaymentMethod` };
+            let subscription = { subscribeTo: `${response.srn}`, notifyTarget: `${req.hostname}:${port}/api/v1/updatePaymentMethods` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
@@ -164,11 +164,11 @@ export default class Model {
         try {
             const response = await createTransfer(req.body.accountId, req.body.transaction);
             console.log(response, 'transfers');
-            let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateLocalWyreTransfer` };
+            let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateLocalWyreTransfers` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                "wyreAccount.id": "AC_CFMZQYCJBD4" /* req.body.accountId */
+                "wyreAccount.id": req.body.accountId
             },
                 { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": false }
                 , async function (err: any, result: any) {

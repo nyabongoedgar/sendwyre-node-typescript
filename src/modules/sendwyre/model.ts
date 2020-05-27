@@ -1,9 +1,8 @@
-import assert from "assert";
 import { connection } from "../../database/Database";
 import { createAccount, createPaymentMethod, attachBlockChainToPaymentMethod, getPaymentMethod, getAccountFromWyre, SubscribeToAccountChanges, SubscribeToPaymentMethodChanges, SubscribeToTransferChanges, getAccountForUpdate, getAndupdatePaymentMethod, getAndupdateTransfer, createTransfer, getDebitCardTransfer } from "./WyreService";
 import { port } from '../../../index';
 
-export default class AccountsTransactions {
+export default class Model {
     /*
     We need to update our queries with the id_ from unifyre
     */
@@ -13,11 +12,12 @@ export default class AccountsTransactions {
 
     static UserMongoSchema = { id: '', profile: {}, wyreAccount: {}, paymentMethods: [], transactions: [] }
 
-    static async postAccountTransaction(req: any, res: any, next: any) {
+    static async saveAccount(req: any, res: any, next: any) {
         try {
             const response = await createAccount(req.body.accountDetails);
+            console.log(response, 'user account created on wyre service');
             let subscription = { subscribeTo: `account:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateAccount` };
-            console.log(subscription, '>>>>>>>>>>>>>>>>>subscription')
+            console.log(subscription, 'subscription');
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({ userId: req.body.userId }, { "$set": { "wyreAccount": response, "profile": {}, "paymentMethods": [], "transactions": [] }, "$inc": { "version": 1 } }, { "upsert": true }, async function (err: any, result: any) {
@@ -37,94 +37,6 @@ export default class AccountsTransactions {
             next(error);
         }
     }
-
-    /* Update statements start from here */
-    static async UpdateAccountTransaction(req: any, res: any, next: any) {
-        try {
-            // "subscribed": "account:AC-F930QD8A2RRR",
-            //best thing to do here is to query the db with the subscribed key to get the account Id instead of using slice
-            /**
-             * The returned payload has the following values
-             * subscriptionId : The same ID returned when the subscription was created
-             * trigger: The SRN of the object which triggered the callback (the same SRN assigned via subscribeTo) */
-            const accountSRN = req.body.trigger;
-            const accountId = accountSRN.split(':').pop();
-            const response = await getAccountForUpdate(accountId);
-            let dbConn2 = await this.dbConn;
-            let db = dbConn2.db(this.dbName);
-            db.collection(this.collectionName).updateOne({ "wyreAccount.id": accountId }, { "$set": { "wyreAccount": response }, "$inc": { "version": 1 } }, { "upsert": false }, async function (err: any, result: any) {
-                if (err) console.log('Mongo Err', err);
-                if (result) {
-                    console.log(result);
-                    res.status(201).json({
-                        updatedAccount: response,
-                        message: 'Account updated successfully',
-                        success: true
-                    });
-                }
-            });
-        }
-        catch (error) {
-            next(error);
-        }
-    }
-
-    static async UpdatePaymentMethod(req: any, res: any, next: any) {
-        try {
-            let dbConn2 = await this.dbConn;
-            let db = dbConn2.db(this.dbName);
-            let paymentMethodSRN = req.body.trigger;
-            let paymentMethodId = paymentMethodSRN.split(":").pop();
-            const result = await db.collection(this.collectionName).find({
-                "paymentMethods.id": paymentMethodId
-            }).toArray();
-            const wyreAccountId = result[0].wyreAccount.id;
-
-            let updateCall = await getAndupdatePaymentMethod(wyreAccountId, paymentMethodId);
-
-            db.collection(this.collectionName).update({
-                "paymentMethods.id": paymentMethodId
-            }, { "$set": { "paymentMethods.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
-                if (err) console.log('Mongo Err', err);
-                console.log(result);
-            });
-
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async updateTransfer(req: any, res: any, next: any) {
-        try {
-            //this transferid comes from a webhook, so I get the transfer as in the following line
-            //transfer:T_QRSSNSIUXUSD .. // This why we use slice, but regular expressions should be used.
-            let transferSRN = req.body.trigger;
-            let transferId = transferSRN.split(":").pop();
-            let dbConn2 = await this.dbConn;
-            let db = dbConn2.db(this.dbName);
-
-            /**
-             *  Method 2 */
-            const result = await db.collection(this.collectionName).find({
-                "transactions.id": transferId
-            }).toArray();
-            const wyreAccountId = result[0].wyreAccount.id;
-
-            let updateCall = await getAndupdateTransfer(wyreAccountId, transferId);
-
-            db.collection(this.collectionName).update({
-                "transactions.id": transferId
-            }, { "$set": { "transactions.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
-                if (err) console.log('Mongo Err', err);
-                console.log(result);
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-
-    // updates stop here
 
     static async getUserInfoFromDb(req: any, res: any, next: any) {
         const userId = req.params.userId;
@@ -198,7 +110,7 @@ export default class AccountsTransactions {
     }
 
 
-    static async UpdateUserDetails(req: any, res: any, next: any) {
+    static async LocalWyreAccountPaymentMethodUpdate(req: any, res: any, next: any) {
         try {
             const accountResponse = await getAccountFromWyre(req.body.accountId);
             const paymentMethod = await getPaymentMethod(req.body.paymentMethodId, req.body.accountId);
@@ -221,7 +133,7 @@ export default class AccountsTransactions {
     //     try {
     //         const response = await confirmTransfer(req.body.accountId, req.body.transferId);
     //         console.log('Creating a fence for response',response, 'this is another response in the confirm transfer account transactions')
-    //         let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
+    //         let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateLocalWyreTransfer` };
     //         let dbConn2 = await this.dbConn;
     //         let db = dbConn2.db(this.dbName);
     //         db.collection(this.collectionName).updateOne({
@@ -248,15 +160,15 @@ export default class AccountsTransactions {
 
     // }
 
-    static async transfer(req: any, res: any, next: any) {
+    static async createTransfer(req: any, res: any, next: any) {
         try {
             const response = await createTransfer(req.body.accountId, req.body.transaction);
-            console.log('??????????????????????????????????????????????????', response, 'this is another response in the confirm transfer account transactions')
-            let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateTransfer` };
+            console.log(response, 'transfers');
+            let subscription = { subscribeTo: `transfer:${response.id}`, notifyTarget: `${req.hostname}:${port}/api/v1/updateLocalWyreTransfer` };
             let dbConn2 = await this.dbConn;
             let db = dbConn2.db(this.dbName);
             db.collection(this.collectionName).updateOne({
-                "wyreAccount.id": "AC_CFMZQYCJBD4" /** req.body.accountId */
+                "wyreAccount.id": "AC_CFMZQYCJBD4" /* req.body.accountId */
             },
                 { "$push": { transactions: response }, "$inc": { "version": 1 } }, { "upsert": false }
                 , async function (err: any, result: any) {
@@ -284,7 +196,7 @@ export default class AccountsTransactions {
             //this transferid comes from a webhook, so I get the transfer as in the following line
             //transfer:T_QRSSNSIUXUSD .. // This why we use slice, but regular expressions should be used.
             // console.log(req.params, '>>>>>', req.query)
-            const {accountId, transferId} = req.query;
+            const { accountId, transferId } = req.query;
             const response = await getDebitCardTransfer(accountId.split(":")[1], transferId);
             // console.log(response.data, 'response s.dbConn;
             // let db = dbConn2.db(this.dbName);
@@ -302,12 +214,100 @@ export default class AccountsTransactions {
             //     })
             // });
             res.send({
-                pickedTransfer : response
+                pickedTransfer: response
             })
         } catch (error) {
             console.log(error, 'in the debit card transactions')
             next(error);
         }
     }
+
+    /* Update statements start from here */
+    static async updateLocalWyreAccount(req: any, res: any, next: any) {
+        try {
+            // "subscribed": "account:AC-F930QD8A2RRR",
+            //best thing to do here is to query the db with the subscribed key to get the account Id instead of using slice
+            /**
+             * The returned payload has the following values
+             * subscriptionId : The same ID returned when the subscription was created
+             * trigger: The SRN of the object which triggered the callback (the same SRN assigned via subscribeTo) */
+            const accountSRN = req.body.trigger;
+            const accountId = accountSRN.split(':').pop();
+            const response = await getAccountForUpdate(accountId);
+            let dbConn2 = await this.dbConn;
+            let db = dbConn2.db(this.dbName);
+            db.collection(this.collectionName).updateOne({ "wyreAccount.id": accountId }, { "$set": { "wyreAccount": response }, "$inc": { "version": 1 } }, { "upsert": false }, async function (err: any, result: any) {
+                if (err) console.log('Mongo Err', err);
+                if (result) {
+                    console.log(result);
+                    res.status(201).json({
+                        updatedAccount: response,
+                        message: 'Account updated successfully',
+                        success: true
+                    });
+                }
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+
+    static async UpdateLocalWyrePaymentMethod(req: any, res: any, next: any) {
+        try {
+            let dbConn2 = await this.dbConn;
+            let db = dbConn2.db(this.dbName);
+            let paymentMethodSRN = req.body.trigger;
+            let paymentMethodId = paymentMethodSRN.split(":").pop();
+            const result = await db.collection(this.collectionName).find({
+                "paymentMethods.id": paymentMethodId
+            }).toArray();
+            const wyreAccountId = result[0].wyreAccount.id;
+
+            let updateCall = await getAndupdatePaymentMethod(wyreAccountId, paymentMethodId);
+
+            db.collection(this.collectionName).update({
+                "paymentMethods.id": paymentMethodId
+            }, { "$set": { "paymentMethods.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
+                if (err) console.log('Mongo Err', err);
+                console.log(result);
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async updateLocalWyreTransfer(req: any, res: any, next: any) {
+        try {
+            //this transferid comes from a webhook, so I get the transfer as in the following line
+            //transfer:T_QRSSNSIUXUSD .. // This why we use slice, but regular expressions should be used.
+            let transferSRN = req.body.trigger;
+            let transferId = transferSRN.split(":").pop();
+            let dbConn2 = await this.dbConn;
+            let db = dbConn2.db(this.dbName);
+
+            /**
+             *  Method 2 */
+            const result = await db.collection(this.collectionName).find({
+                "transactions.id": transferId
+            }).toArray();
+            const wyreAccountId = result[0].wyreAccount.id;
+
+            let updateCall = await getAndupdateTransfer(wyreAccountId, transferId);
+
+            db.collection(this.collectionName).update({
+                "transactions.id": transferId
+            }, { "$set": { "transactions.$": updateCall }, "$inc": { "version": 1 } }, { "upsert": false }, function (err: any, result: any) {
+                if (err) console.log('Mongo Err', err);
+                console.log(result);
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    // updates stop here
 
 }

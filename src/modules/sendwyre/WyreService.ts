@@ -63,9 +63,6 @@ export async function createAccount(accountDetails: any): Promise<any> {
     } catch (error) {
         let errorObject = error.response.data;
         throw errorObject;
-        // const err = {err: response.data}
-        // throw new Error(error);
-        // return error;
     }
 }
 

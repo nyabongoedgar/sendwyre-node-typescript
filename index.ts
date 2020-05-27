@@ -1,6 +1,5 @@
-import app from './src/app'
-const port = 3000
+import app from './src/app';
 
-app.get('/', (req: any, res: any) => res.send('Hello World!'))
+export const port = 3000;
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`SendWyre app listening on port ${port}!`))

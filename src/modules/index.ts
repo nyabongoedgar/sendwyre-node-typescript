@@ -1,4 +1,4 @@
-import accountsRouter from './accounts';
+import accountsRouter from './sendwyre';
 
 
 const apiPrefix = '/api/v1';
